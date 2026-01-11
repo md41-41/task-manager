@@ -531,27 +531,27 @@
                 <div className="space-y-0">
                   {filteredTasks.map((task) => (
                     <div key={task.id} className="border-b last:border-b-0">
-                      <div className="flex items-start sm:items-center gap-2 sm:gap-4 py-3 sm:py-4 md:py-5 hover:bg-gray-50 px-2 sm:px-4 -mx-2 sm:-mx-4">
-                        <button onClick={() => toggleTask(task.id)} className={`w-5 h-5 sm:w-6 sm:h-6 mt-0.5 sm:mt-0 rounded flex items-center justify-center flex-shrink-0 ${task.completed ? 'bg-green-400 border-2 border-green-400' : 'border-2 border-gray-300'}`}>
+                      <div className="flex items-center gap-2 sm:gap-3 py-3 sm:py-4 hover:bg-gray-50 px-2 sm:px-4 -mx-2 sm:-mx-4">
+                        <button onClick={() => toggleTask(task.id)} className={`w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center flex-shrink-0 ${task.completed ? 'bg-green-400 border-2 border-green-400' : 'border-2 border-gray-300'}`}>
                           {task.completed && <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
                         </button>
                         <span className={`flex-1 text-sm sm:text-base md:text-lg min-w-0 ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 font-medium'}`}>{task.title}</span>
                         
-                        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <button 
                             onClick={() => startPomodoro(task.id)} 
-                            className={`flex items-center justify-center w-6 h-6 rounded-full ${timers[task.id] ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-600 hover:bg-red-200'} transition-colors`}
+                            className={`flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full ${timers[task.id] ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-600 hover:bg-red-200'} transition-colors flex-shrink-0`}
                             title={timers[task.id] ? `${formatTime(timers[task.id])} remaining` : 'Start Pomodoro (20 min)'}
                           >
                             {timers[task.id] ? (
-                              <span className="text-[8px] font-bold">{formatTime(timers[task.id])}</span>
+                              <span className="text-[7px] sm:text-[8px] font-bold">{formatTime(timers[task.id])}</span>
                             ) : (
                               <TomatoIcon />
                             )}
                           </button>
 
                           <div className="relative">
-                            <button onClick={() => setEditingTask(editingTask === `status-${task.id}` ? null : `status-${task.id}`)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] sm:text-[9px] font-medium rounded-full border whitespace-nowrap ${getStatusColor(task.status)}`}>{getStatusLabel(task.status)}</button>
+                            <button onClick={() => setEditingTask(editingTask === `status-${task.id}` ? null : `status-${task.id}`)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[7px] sm:text-[8px] font-medium rounded-full border whitespace-nowrap ${getStatusColor(task.status)}`}>{getStatusLabel(task.status)}</button>
                             {editingTask === `status-${task.id}` && (
                               <div className="fixed inset-x-4 bottom-20 sm:absolute sm:inset-auto sm:right-0 sm:bottom-full sm:mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 max-w-xs sm:min-w-[140px]">
                                 {['not-started', 'in-progress', 'done'].map((status) => (
@@ -562,7 +562,7 @@
                           </div>
 
                           <div className="relative">
-                            <button onClick={() => setEditingTask(editingTask === task.id ? null : task.id)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] sm:text-[9px] font-medium rounded-full whitespace-nowrap border ${
+                            <button onClick={() => setEditingTask(editingTask === task.id ? null : task.id)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[7px] sm:text-[8px] font-medium rounded-full whitespace-nowrap border ${
                               task.timeframe === 'today' ? 'bg-red-50 text-red-700 border-red-200' :
                               task.timeframe === 'week' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
                               'bg-gray-50 text-gray-700 border-gray-200'
@@ -577,7 +577,7 @@
                           </div>
 
                           <div className="relative">
-                            <button onClick={() => setEditingTask(editingTask === `priority-${task.id}` ? null : `priority-${task.id}`)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] sm:text-[9px] font-medium rounded-full border whitespace-nowrap ${getPriorityColor(task.priority)}`}><FlagIcon /> {task.priority}</button>
+                            <button onClick={() => setEditingTask(editingTask === `priority-${task.id}` ? null : `priority-${task.id}`)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[7px] sm:text-[8px] font-medium rounded-full border whitespace-nowrap ${getPriorityColor(task.priority)}`}><FlagIcon /> {task.priority}</button>
                             {editingTask === `priority-${task.id}` && (
                               <div className="fixed inset-x-4 bottom-20 sm:absolute sm:inset-auto sm:right-0 sm:bottom-full sm:mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 max-w-xs sm:min-w-[120px]">
                                 {['Tier 1', 'Tier 2', 'Tier 3'].map((priority) => (
@@ -587,13 +587,13 @@
                             )}
                           </div>
 
-                          <div className="px-1.5 py-0.5 text-[8px] sm:text-[9px] font-medium bg-gray-100 text-gray-700 rounded-full whitespace-nowrap border border-gray-200">
+                          <div className="px-1.5 py-0.5 text-[7px] sm:text-[8px] font-medium bg-gray-100 text-gray-700 rounded-full whitespace-nowrap border border-gray-200">
                             {task.list}
                           </div>
 
                           <button onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)} className="flex items-center gap-0.5 text-gray-600 flex-shrink-0">
                             <MessageSquareIcon />
-                            <span className="text-[9px] sm:text-[10px] font-semibold">{task.notes?.length || 0}</span>
+                            <span className="text-[8px] sm:text-[9px] font-semibold">{task.notes?.length || 0}</span>
                           </button>
                         </div>
                       </div>
