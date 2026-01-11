@@ -102,7 +102,7 @@
       const filteredTasks = tasks.filter(task => {
         const matchesList = currentList === 'All Tasks' || task.list === currentList;
         const matchesFilter = 
-          filter === 'all' ? true :
+          filter === 'all' ? (task.status === 'not-started' || task.status === 'in-progress') :
           filter === 'in-progress' ? task.status === 'in-progress' :
           filter === 'done' ? task.completed : true;
         const matchesTimeframe = timeframeFilters.includes(task.timeframe);
@@ -469,9 +469,9 @@
                         </button>
                         <span className={`flex-1 text-sm sm:text-base md:text-lg min-w-0 ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 font-medium'}`}>{task.title}</span>
                         
-                        <div className="flex flex-wrap items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-shrink-0">
                           <div className="relative">
-                            <button onClick={() => setEditingTask(editingTask === `status-${task.id}` ? null : `status-${task.id}`)} className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full border whitespace-nowrap ${getStatusColor(task.status)}`}>{getStatusLabel(task.status)}</button>
+                            <button onClick={() => setEditingTask(editingTask === `status-${task.id}` ? null : `status-${task.id}`)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full border whitespace-nowrap ${getStatusColor(task.status)}`}>{getStatusLabel(task.status)}</button>
                             {editingTask === `status-${task.id}` && (
                               <div className="fixed inset-x-4 bottom-20 sm:absolute sm:inset-auto sm:right-0 sm:bottom-full sm:mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 max-w-xs sm:min-w-[140px]">
                                 {['not-started', 'in-progress', 'done'].map((status) => (
@@ -482,7 +482,7 @@
                           </div>
 
                           <div className="relative">
-                            <button onClick={() => setEditingTask(editingTask === task.id ? null : task.id)} className="flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-purple-50 text-purple-700 rounded-full whitespace-nowrap"><CalendarIcon /> {getTimeframeLabel(task.timeframe).replace('This ', '')}</button>
+                            <button onClick={() => setEditingTask(editingTask === task.id ? null : task.id)} className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium bg-purple-50 text-purple-700 rounded-full whitespace-nowrap"><CalendarIcon /> {getTimeframeLabel(task.timeframe).replace('This ', '')}</button>
                             {editingTask === task.id && (
                               <div className="fixed inset-x-4 bottom-20 sm:absolute sm:inset-auto sm:right-0 sm:bottom-full sm:mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 max-w-xs sm:min-w-[140px]">
                                 {['today', 'week', 'month'].map((timeframe) => (
@@ -493,7 +493,7 @@
                           </div>
 
                           <div className="relative">
-                            <button onClick={() => setEditingTask(editingTask === `priority-${task.id}` ? null : `priority-${task.id}`)} className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full border whitespace-nowrap ${getPriorityColor(task.priority)}`}><FlagIcon /> {task.priority}</button>
+                            <button onClick={() => setEditingTask(editingTask === `priority-${task.id}` ? null : `priority-${task.id}`)} className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full border whitespace-nowrap ${getPriorityColor(task.priority)}`}><FlagIcon /> {task.priority}</button>
                             {editingTask === `priority-${task.id}` && (
                               <div className="fixed inset-x-4 bottom-20 sm:absolute sm:inset-auto sm:right-0 sm:bottom-full sm:mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 max-w-xs sm:min-w-[120px]">
                                 {['Tier 1', 'Tier 2', 'Tier 3'].map((priority) => (
@@ -503,9 +503,13 @@
                             )}
                           </div>
 
-                          <button onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)} className="flex items-center gap-1 text-gray-600 flex-shrink-0">
+                          <div className="px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium bg-gray-100 text-gray-700 rounded-full whitespace-nowrap border border-gray-200">
+                            {task.list}
+                          </div>
+
+                          <button onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)} className="flex items-center gap-0.5 text-gray-600 flex-shrink-0">
                             <MessageSquareIcon />
-                            <span className="text-xs sm:text-sm font-semibold">{task.notes?.length || 0}</span>
+                            <span className="text-[10px] sm:text-xs font-semibold">{task.notes?.length || 0}</span>
                           </button>
                         </div>
                       </div>
