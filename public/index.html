@@ -375,7 +375,7 @@
                     <ChevronDownIcon />
                   </button>
                   {showListDropdown && (
-                    <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border py-2 z-10">
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-10">
                       <button onClick={() => { setCurrentList('All Tasks'); setShowListDropdown(false); }} className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${currentList === 'All Tasks' ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-700'}`}>All Tasks</button>
                       <div className="my-2 border-t" />
                       {lists.map((list) => (
@@ -467,7 +467,7 @@
                         <div className="relative">
                           <button onClick={() => setEditingTask(editingTask === `status-${task.id}` ? null : `status-${task.id}`)} className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(task.status)}`}>{getStatusLabel(task.status)}</button>
                           {editingTask === `status-${task.id}` && (
-                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[140px]">
+                            <div className="absolute right-0 bottom-full mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[140px]">
                               {['not-started', 'in-progress', 'done'].map((status) => (
                                 <button key={status} onClick={() => { updateTaskStatus(task.id, status); setEditingTask(null); }} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">{getStatusLabel(status)}</button>
                               ))}
@@ -478,7 +478,7 @@
                         <div className="relative">
                           <button onClick={() => setEditingTask(editingTask === task.id ? null : task.id)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full"><CalendarIcon /> {getTimeframeLabel(task.timeframe)}</button>
                           {editingTask === task.id && (
-                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[140px]">
+                            <div className="absolute right-0 bottom-full mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[140px]">
                               {['today', 'week', 'month'].map((timeframe) => (
                                 <button key={timeframe} onClick={() => { updateTaskTimeframe(task.id, timeframe); setEditingTask(null); }} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">{getTimeframeLabel(timeframe)}</button>
                               ))}
@@ -489,7 +489,7 @@
                         <div className="relative">
                           <button onClick={() => setEditingTask(editingTask === `priority-${task.id}` ? null : `priority-${task.id}`)} className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}><FlagIcon /> {task.priority}</button>
                           {editingTask === `priority-${task.id}` && (
-                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[120px]">
+                            <div className="absolute right-0 bottom-full mb-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[120px]">
                               {['Tier 1', 'Tier 2', 'Tier 3'].map((priority) => (
                                 <button key={priority} onClick={() => { updateTaskPriority(task.id, priority); setEditingTask(null); }} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">{priority}</button>
                               ))}
