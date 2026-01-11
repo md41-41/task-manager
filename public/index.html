@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    
+    // Lucide icons as inline SVGs
+    const SearchIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>;
+    const MessageSquareIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
+    const PlusIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    const ChevronDownIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>;
+    const CalendarIcon = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    const FlagIcon = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>;
+    const Edit2Icon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
+    const Trash2Icon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+    const CheckIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>;
+    const XIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+
+    const API_URL = window.location.origin;
+
+    function TaskManager() {
+      const [tasks, setTasks] = useState([]);
+      const [lists, setLists] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [filter, setFilter] = useState('all');
+      const [currentList, setCurrentList] = useState('All Tasks');
+      const [showListDropdown, setShowListDropdown] = useState(false);
+      const [newTask, setNewTask] = useState('');
+      const [editingTask, setEditingTask] = useState(null);
+      const [timeframeFilters, setTimeframeFilters] = useState(['today', 'week', 'month']);
+      const [expandedTask, setExpandedTask] = useState(null);
+      const [newNote, setNewNote] = useState('');
+      const [editingList, setEditingList] = useState(null);
+      const [editingListName, setEditingListName] = useState('');
+      const [newListName, setNewListName] = useState('');
+      const [deletingList, setDeletingList] = useState(null);
+
+      useEffect(() => {
+        fetchLists();
+        fetchTasks();
+      }, []);
+
+      const fetchLists = async () => {
+        try {
+          const res = await fetch(`${API_URL}/api/lists`);
+          const data = await res.json();
+          setLists(data.map(l => l.name));
+        } catch (err) {
+          console.error('Failed to fetch lists:', err);
+        }
+      };
+
+      const fetchTasks = async () => {
+        try {
+          const res = await fetch(`${API_URL}/api/tasks`);
+          const data = await res.json();
+          const tasksWithNotes = await Promise.all(
+            data.map(async (task) => {
+              const notesRes = await fetch(`${API_URL}/api/tasks/${task.id}/notes`);
+              const notes = await notesRes.json();
+              return { ...task, list: task.list_name, notes: notes || [] };
+            })
+          );
+          setTasks(tasksWithNotes);
+          setLoading(false);
+        } catch (err) {
+          console.error('Failed to fetch tasks:', err);
+          setLoading(false);
+        }
+      };
+
+      const toggleTimeframeFilter = (timeframe) => {
+        if (timeframeFilters.includes(timeframe)) {
+          if (timeframeFilters.length === 1) return;
+          setTimeframeFilters(timeframeFilters.filter(t => t !== timeframe));
+        } else {
+          setTimeframeFilters([...timeframeFilters, timeframe]);
+        }
+      };
+
+      const getProgress = (timeframe) => {
+        const listFiltered = currentList === 'All Tasks' ? tasks : tasks.filter(t => t.list === currentList);
+        const filtered = listFiltered.filter(t => t.timeframe === timeframe);
+        const completed = filtered.filter(t => t.completed).length;
+        return { completed, total: filtered.length };
+      };
+
+      const filteredTasks = tasks.filter(task => {
+        const matchesList = currentList === 'All Tasks' || task.list === currentList;
+        const matchesFilter = 
+          filter === 'all' ? true :
+          filter === 'in-progress' ? task.status === 'in-progress' :
+          filter === 'done' ? task.completed : true;
+        const matchesTimeframe = timeframeFilters.includes(task.timeframe);
+        return matchesList && matchesFilter && matchesTimeframe;
+      });
+
+      const toggleTask = async (id) => {
+        const task = tasks.find(t => t.id === id);
+        const newCompleted = !task.completed;
+        const newStatus = newCompleted ? 'done' : 'not-started';
+        
+        try {
+          await fetch(`${API_URL}/api/tasks/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed: newCompleted, status: newStatus })
+          });
+          setTasks(tasks.map(t => t.id === id ? { ...t, completed: newCompleted, status: newStatus } : t));
+        } catch (err) {
+          console.error('Failed to toggle task:', err);
+        }
+      };
+
+      const handleAddTask = async () => {
+        if (newTask.trim()) {
+          const listId = lists.indexOf(currentList === 'All Tasks' ? 'Personal' : currentList) + 1;
+          
+          try {
+            const res = await fetch(`${API_URL}/api/tasks`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: newTask,
+                list_id: listId,
+                status: 'not-started',
+                priority: 'Tier 2',
+                timeframe: 'today',
+                completed: false
+              })
+            });
+            
+            const newTaskData = await res.json();
+            setTasks([...tasks, { 
+              ...newTaskData, 
+              list: currentList === 'All Tasks' ? 'Personal' : currentList,
+              notes: []
+            }]);
+            setNewTask('');
+          } catch (err) {
+            console.error('Failed to add task:', err);
+          }
+        }
+      };
+
+      const updateTaskTimeframe = async (id, timeframe) => {
+        try {
+          await fetch(`${API_URL}/api/tasks/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeframe })
+          });
+          setTasks(tasks.map(task => task.id === id ? { ...task, timeframe } : task));
+        } catch (err) {
+          console.error('Failed to update timeframe:', err);
+        }
+      };
+
+      const updateTaskPriority = async (id, priority) => {
+        try {
+          await fetch(`${API_URL}/api/tasks/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ priority })
+          });
+          setTasks(tasks.map(task => task.id === id ? { ...task, priority } : task));
+        } catch (err) {
+          console.error('Failed to update priority:', err);
+        }
+      };
+
+      const updateTaskStatus = async (id, status) => {
+        const completed = status === 'done';
+        try {
+          await fetch(`${API_URL}/api/tasks/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, completed })
+          });
+          setTasks(tasks.map(task => task.id === id ? { ...task, status, completed } : task));
+        } catch (err) {
+          console.error('Failed to update status:', err);
+        }
+      };
+
+      const addNote = async (taskId) => {
+        if (newNote.trim()) {
+          try {
+            const res = await fetch(`${API_URL}/api/notes`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ task_id: taskId, text: newNote, completed: false })
+            });
+            const newNoteData = await res.json();
+            setTasks(tasks.map(task =>
+              task.id === taskId ? { ...task, notes: [...task.notes, newNoteData] } : task
+            ));
+            setNewNote('');
+          } catch (err) {
+            console.error('Failed to add note:', err);
+          }
+        }
+      };
+
+      const toggleNote = async (taskId, noteId) => {
+        const task = tasks.find(t => t.id === taskId);
+        const note = task.notes.find(n => n.id === noteId);
+        try {
+          await fetch(`${API_URL}/api/notes/${noteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed: !note.completed })
+          });
+          setTasks(tasks.map(t =>
+            t.id === taskId ? {
+              ...t,
+              notes: t.notes.map(n => n.id === noteId ? { ...n, completed: !n.completed } : n)
+            } : t
+          ));
+        } catch (err) {
+          console.error('Failed to toggle note:', err);
+        }
+      };
+
+      const deleteNote = async (taskId, noteId) => {
+        try {
+          await fetch(`${API_URL}/api/notes/${noteId}`, { method: 'DELETE' });
+          setTasks(tasks.map(task =>
+            task.id === taskId ? { ...task, notes: task.notes.filter(note => note.id !== noteId) } : task
+          ));
+        } catch (err) {
+          console.error('Failed to delete note:', err);
+        }
+      };
+
+      const addList = async () => {
+        if (newListName.trim() && !lists.includes(newListName.trim())) {
+          try {
+            await fetch(`${API_URL}/api/lists`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: newListName.trim() })
+            });
+            setLists([...lists, newListName.trim()]);
+            setNewListName('');
+          } catch (err) {
+            console.error('Failed to add list:', err);
+          }
+        }
+      };
+
+      const deleteList = async (listName) => {
+        if (listName === 'All Tasks') return;
+        const listIndex = lists.indexOf(listName);
+        const listId = listIndex + 1;
+        try {
+          await fetch(`${API_URL}/api/lists/${listId}`, { method: 'DELETE' });
+          setLists(lists.filter(l => l !== listName));
+          if (currentList === listName) setCurrentList('All Tasks');
+          fetchTasks();
+          setDeletingList(null);
+          setShowListDropdown(false);
+        } catch (err) {
+          console.error('Failed to delete list:', err);
+        }
+      };
+
+      const saveListName = async () => {
+        if (editingListName.trim() && !lists.includes(editingListName.trim())) {
+          const oldName = editingList;
+          const listIndex = lists.indexOf(oldName);
+          const listId = listIndex + 1;
+          try {
+            await fetch(`${API_URL}/api/lists/${listId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: editingListName.trim() })
+            });
+            setLists(lists.map(l => l === oldName ? editingListName.trim() : l));
+            if (currentList === oldName) setCurrentList(editingListName.trim());
+            fetchTasks();
+          } catch (err) {
+            console.error('Failed to update list:', err);
+          }
+        }
+        setEditingList(null);
+        setEditingListName('');
+      };
+
+      const getPriorityColor = (priority) => {
+        switch(priority) {
+          case 'Tier 1': return 'text-red-600 bg-red-50 border-red-200';
+          case 'Tier 2': return 'text-orange-600 bg-orange-50 border-orange-200';
+          case 'Tier 3': return 'text-blue-600 bg-blue-50 border-blue-200';
+          default: return 'text-gray-600 bg-gray-50 border-gray-200';
+        }
+      };
+
+      const getStatusColor = (status) => {
+        switch(status) {
+          case 'not-started': return 'text-gray-600 bg-gray-50 border-gray-200';
+          case 'in-progress': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+          case 'done': return 'text-green-600 bg-green-50 border-green-200';
+          default: return 'text-gray-600 bg-gray-50 border-gray-200';
+        }
+      };
+
+      const getStatusLabel = (status) => {
+        switch(status) {
+          case 'not-started': return 'Not Started';
+          case 'in-progress': return 'In Progress';
+          case 'done': return 'Done';
+          default: return status;
+        }
+      };
+
+      const getTimeframeLabel = (timeframe) => {
+        switch(timeframe) {
+          case 'today': return 'Today';
+          case 'week': return 'This Week';
+          case 'month': return 'This Month';
+          default: return timeframe;
+        }
+      };
+
+      const todayProgress = getProgress('today');
+      const weekProgress = getProgress('week');
+      const monthProgress = getProgress('month');
+
+      if (loading) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-purple-300 via-purple-200 to-pink-200 flex items-center justify-center">
+            <div className="text-2xl font-semibold text-gray-700">Loading...</div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-300 via-purple-200 to-pink-200 p-8 flex items-center justify-center">
+          {deletingList && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Delete List?</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete "{deletingList}"? All tasks will be moved to "Personal".
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => setDeletingList(null)} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium">Cancel</button>
+                  <button onClick={() => deleteList(deletingList)} className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 font-medium">Delete</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="w-full max-w-3xl bg-white rounded-lg shadow-2xl overflow-hidden">
+            <div className="p-8 pb-6 flex items-center justify-between border-b border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <button onClick={() => setShowListDropdown(!showListDropdown)} className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg">
+                    <span className="text-sm font-semibold text-gray-700">{currentList}</span>
+                    <ChevronDownIcon />
+                  </button>
+                  {showListDropdown && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border py-2 z-10">
+                      <button onClick={() => { setCurrentList('All Tasks'); setShowListDropdown(false); }} className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${currentList === 'All Tasks' ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-700'}`}>All Tasks</button>
+                      <div className="my-2 border-t" />
+                      {lists.map((list) => (
+                        <div key={list}>
+                          {editingList === list ? (
+                            <div className="flex items-center gap-2 px-4 py-2">
+                              <input type="text" value={editingListName} onChange={(e) => setEditingListName(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') saveListName(); }} className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded outline-none" autoFocus />
+                              <button onClick={saveListName} className="text-green-600"><CheckIcon /></button>
+                              <button onClick={() => setEditingList(null)} className="text-gray-400"><XIcon /></button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50">
+                              <button onClick={() => { setCurrentList(list); setShowListDropdown(false); }} className={`flex-1 text-left ${currentList === list ? 'text-purple-700 font-semibold' : 'text-gray-700'}`}>{list}</button>
+                              <button onClick={() => { setEditingList(list); setEditingListName(list); }} className="p-1 text-gray-400 hover:text-blue-600 rounded"><Edit2Icon /></button>
+                              <button onClick={() => setDeletingList(list)} className="p-1 text-gray-400 hover:text-red-600 rounded"><Trash2Icon /></button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div className="my-2 border-t" />
+                      <div className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <input type="text" value={newListName} onChange={(e) => setNewListName(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') addList(); }} placeholder="New list..." className="flex-1 px-3 py-1.5 text-sm border rounded outline-none" />
+                          <button onClick={addList} className="px-3 py-1.5 text-xs font-medium bg-purple-600 text-white rounded hover:bg-purple-700">Add</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <h1 className="text-4xl font-bold text-gray-900">{currentList}</h1>
+              </div>
+              <button className="p-3 hover:bg-gray-50 rounded-lg"><SearchIcon /></button>
+            </div>
+
+            <div className="px-8 pt-6 pb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-b">
+              <div className="grid grid-cols-3 gap-6">
+                {[
+                  { label: 'Today', progress: todayProgress, color: 'bg-gradient-to-r from-green-400 to-green-500', timeframe: 'today' },
+                  { label: 'This Week', progress: weekProgress, color: 'bg-gradient-to-r from-blue-400 to-blue-500', timeframe: 'week' },
+                  { label: 'This Month', progress: monthProgress, color: 'bg-gradient-to-r from-purple-400 to-purple-500', timeframe: 'month' }
+                ].map(({ label, progress, color, timeframe }) => {
+                  const isSelected = timeframeFilters.includes(timeframe);
+                  const percentage = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
+                  return (
+                    <button key={timeframe} onClick={() => toggleTimeframeFilter(timeframe)} className={`flex-1 ${isSelected ? '' : 'opacity-50'}`}>
+                      <div className={`p-4 rounded-lg ${isSelected ? 'bg-white shadow-md ring-2 ring-purple-400' : 'bg-white/30'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-sm font-medium ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>{label}</span>
+                          <span className={`text-sm font-semibold ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>{progress.completed}/{progress.total}</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${color} rounded-full`} style={{width: `${percentage}%`}} />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-0 px-8 pt-6">
+              {['all', 'in-progress', 'done'].map(f => (
+                <button key={f} onClick={() => setFilter(f)} className={`px-8 py-3 font-semibold rounded-t-lg ${filter === f ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  {f === 'all' ? 'All' : f === 'in-progress' ? 'In Progress' : 'Done'}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-8 pb-0">
+              <div className="flex items-center gap-4 p-4 border rounded-lg hover:border-gray-300">
+                <button onClick={handleAddTask} className="w-6 h-6 rounded border-2 border-gray-300 flex items-center justify-center hover:border-green-400"><PlusIcon /></button>
+                <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') handleAddTask(); }} placeholder="Type to add a new task ..." className="flex-1 text-lg outline-none bg-transparent" />
+              </div>
+            </div>
+
+            <div className="p-8 pt-6">
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">No tasks found</div>
+              ) : (
+                <div className="space-y-0">
+                  {filteredTasks.map((task) => (
+                    <div key={task.id} className="border-b">
+                      <div className="flex items-center gap-4 py-5 hover:bg-gray-50 px-4 -mx-4">
+                        <button onClick={() => toggleTask(task.id)} className={`w-6 h-6 rounded flex items-center justify-center ${task.completed ? 'bg-green-400 border-2 border-green-400' : 'border-2 border-gray-300'}`}>
+                          {task.completed && <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
+                        </button>
+                        <span className={`flex-1 text-lg ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 font-medium'}`}>{task.title}</span>
+                        
+                        <div className="relative">
+                          <button onClick={() => setEditingTask(editingTask === `status-${task.id}` ? null : `status-${task.id}`)} className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(task.status)}`}>{getStatusLabel(task.status)}</button>
+                          {editingTask === `status-${task.id}` && (
+                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[140px]">
+                              {['not-started', 'in-progress', 'done'].map((status) => (
+                                <button key={status} onClick={() => { updateTaskStatus(task.id, status); setEditingTask(null); }} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">{getStatusLabel(status)}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="relative">
+                          <button onClick={() => setEditingTask(editingTask === task.id ? null : task.id)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full"><CalendarIcon /> {getTimeframeLabel(task.timeframe)}</button>
+                          {editingTask === task.id && (
+                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[140px]">
+                              {['today', 'week', 'month'].map((timeframe) => (
+                                <button key={timeframe} onClick={() => { updateTaskTimeframe(task.id, timeframe); setEditingTask(null); }} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">{getTimeframeLabel(timeframe)}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="relative">
+                          <button onClick={() => setEditingTask(editingTask === `priority-${task.id}` ? null : `priority-${task.id}`)} className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}><FlagIcon /> {task.priority}</button>
+                          {editingTask === `priority-${task.id}` && (
+                            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border py-2 z-20 min-w-[120px]">
+                              {['Tier 1', 'Tier 2', 'Tier 3'].map((priority) => (
+                                <button key={priority} onClick={() => { updateTaskPriority(task.id, priority); setEditingTask(null); }} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">{priority}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <button onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)} className="flex items-center gap-2 text-gray-600">
+                          <MessageSquareIcon />
+                          <span className="font-semibold">{task.notes?.length || 0}</span>
+                        </button>
+                      </div>
+
+                      {expandedTask === task.id && (
+                        <div className="px-4 pb-5 -mx-4 bg-gray-50">
+                          <div className="ml-10 space-y-3">
+                            {task.notes?.map((note) => (
+                              <div key={note.id} className="flex items-start gap-3 group">
+                                <button onClick={() => toggleNote(task.id, note.id)} className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center ${note.completed ? 'bg-green-400 border border-green-400' : 'border border-gray-300'}`}>
+                                  {note.completed && <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
+                                </button>
+                                <span className={`flex-1 text-sm ${note.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{note.text}</span>
+                                <button onClick={() => deleteNote(task.id, note.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 text-xs">✕</button>
+                              </div>
+                            ))}
+                            <div className="flex items-center gap-3 pt-2">
+                              <div className="w-4 h-4" />
+                              <input type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') addNote(task.id); }} placeholder="Add a note..." className="flex-1 text-sm outline-none bg-white px-3 py-2 rounded border focus:border-purple-300" />
+                              <button onClick={() => addNote(task.id)} className="px-3 py-2 text-xs font-medium bg-purple-600 text-white rounded hover:bg-purple-700">Add</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<TaskManager />);
+  </script>
+</body>
+</html>
